@@ -73,7 +73,7 @@ min_lr = 6e-5 # minimum learning rate, should be ~= learning_rate/10 per Chinchi
 backend = 'nccl' # 'nccl', 'gloo', etc.
 # system
 device = 'cuda' # examples: 'cpu', 'cuda', 'cuda:0', 'cuda:1' etc., or try 'mps' on macbooks
-dtype = 'float32' if torch.cuda.is_available() and torch.cuda.is_bf16_supported() else 'float16' # 'float32', 'bfloat16', or 'float16', the latter will auto implement a GradScaler
+dtype = 'float32' # 'float32', 'bfloat16', or 'float16', the latter will auto implement a GradScaler
 compile = False # use PyTorch 2.0 to compile the model to be faster
 # added keys
 ln_learnable = True
@@ -91,19 +91,6 @@ sigma_w = 1.0
 sigma_qk = 1.0
 sigma_emb = 1.0
 sigma_unemb = 1.0
-# Jacobian-based exponent estimation
-compute_exponents_from_jacobian = False
-n_jac = 100  # how often (in steps) to compute Jacobian-based exponent
-n_R = 10       # number of Hutchinson samples
-# Angular pattern evaluation
-compute_ang_patterns = False
-n_ang = 100  # how often (in steps) to compute angular patterns
-# Gradient-based exponent estimation
-compute_exponents_from_grads = False
-n_grad = 100  # how often (in steps) to compute gradient-based exponents
-# Activation norms evaluation (per-block)
-compute_activation_norms = False
-n_act = 100  # how often (in steps) to compute activation norms
 # early stopping: stop if no val loss improvement for this many steps (None disables)
 early_stop_patience_steps = None
 # Save a final checkpoint at the end of training (in addition to any per-interval ones)
