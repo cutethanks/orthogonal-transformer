@@ -17,7 +17,7 @@ MAX_PARALLEL = 3   # start with 2 or 3; you can adjust upward if VRAM is fine
 procs = []
 
 for sigma_w in sigma_ws:
-    out = f'/content/drive/MyDrive/ml_projects/orthogonal_transformer/orthogonal-transformer-layers-16-d-256-lr-3e-4/sigma_w_{vel_weight:g}'
+    out = f'/content/drive/MyDrive/ml_projects/orthogonal_transformer/orthogonal-transformer-layers-16-d-256-lr-3e-4/sigma_w_{sigma_w:g}'
     os.makedirs(out, exist_ok=True)
     cmd = base + [
         f'--sigma_w={sigma_w}',
