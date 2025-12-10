@@ -132,6 +132,7 @@ class Block(nn.Module):
         # If orthogonal_transformer is True, force orthogonal_residual to True
         self.orthogonal_residual = getattr(config, 'orthogonal_residual', False) or self.orthogonal_transformer
         self.n_embd = config.n_embd  # store for sqrt(d) computation
+        self.eps_tan = float(getattr(config, 'eps_tan', 1e-6))  # small angle threshold for orthogonal_transformer
         # residual/branch scaling (non-trainable hyperparameters)
         self.alpha_res = float(getattr(config, 'alpha_res', 1.0))
         self.beta_branch = float(getattr(config, 'beta_branch', 1.0))
@@ -152,45 +153,64 @@ class Block(nn.Module):
             self.vel_attn = VelNorm(config.n_embd, init_weight=vel_weight)
             self.vel_mlp = VelNorm(config.n_embd, init_weight=vel_weight)
 
+    def _remove_radial_component(self, h, x):
+        """Remove the radial component of h with respect to x (make h orthogonal to x)."""
+        x_norm = x / x.norm(dim=-1, keepdim=True)
+        radial = (h * x_norm).sum(dim=-1, keepdim=True) * x_norm
+        return h - radial
+
+    def _apply_rotation_residual(self, x, h):
+        """
+        Apply rotation-based residual addition: x_new = cos(theta) * x + sin(theta) * (h_unit * sqrt(d))
+        where theta = |h| / sqrt(d).
+        
+        For small angles (theta < eps_tan), uses Taylor approximation:
+        x_new = (1 - theta^2/2) * x + h
+        """
+        sqrt_d = math.sqrt(self.n_embd)
+        h_norm = h.norm(dim=-1, keepdim=True)  # |h|
+        theta = h_norm / sqrt_d  # theta = |h| / sqrt(d)
+        
+        # Small angle approximation when theta < eps_tan
+        # cos(theta) ≈ 1 - theta^2/2, sin(theta) ≈ theta
+        # So: cos(theta) * x + sin(theta) * h_normalized ≈ (1 - theta^2/2) * x + h
+        small_angle = theta < self.eps_tan
+        
+        if small_angle.all():
+            # Use approximation for all elements
+            return (1 - theta.pow(2) / 2) * x + h
+        elif small_angle.any():
+            # Mixed case: use approximation where theta is small, rotation otherwise
+            h_normalized = h / theta  # h_unit * sqrt(d)
+            x_new = torch.cos(theta) * x + torch.sin(theta) * h_normalized
+            # Replace with approximation where theta is small
+            x_approx = (1 - theta.pow(2) / 2) * x + h
+            return torch.where(small_angle, x_approx, x_new)
+        else:
+            # Full rotation for all elements
+            h_normalized = h / theta  # h_unit * sqrt(d)
+            return torch.cos(theta) * x + torch.sin(theta) * h_normalized
+
     def forward(self, x):
         # Pre-LN: x -> norm -> attn -> (optional orthogonalization) -> (optional VelNorm) -> add -> 
         #         norm -> mlp -> (optional orthogonalization) -> (optional VelNorm) -> add
         h = self.attn(self.ln_1(x))
         if self.orthogonal_residual:
-            # Remove radial component: project h onto normalized x and subtract
-            x_norm = x / x.norm(dim=-1, keepdim=True)
-            radial = (h * x_norm).sum(dim=-1, keepdim=True) * x_norm
-            h = h - radial
+            h = self._remove_radial_component(h, x)
         if self.peri_ln and self.vel_attn is not None:
             h = self.vel_attn(h)
-        
         if self.orthogonal_transformer:
-            # Rotation-based residual: x_new = cos(theta) * x + sin(theta) * (h_unit * sqrt(d))
-            # where theta = |h| / sqrt(d), and h_unit * sqrt(d) = h / theta
-            sqrt_d = math.sqrt(self.n_embd)
-            h_norm = h.norm(dim=-1, keepdim=True)  # |h|
-            theta = h_norm / sqrt_d  # theta = |h| / sqrt(d)
-            h_normalized = h / theta  # h / theta = h_unit * sqrt(d)
-            x = torch.cos(theta) * x + torch.sin(theta) * h_normalized
+            x = self._apply_rotation_residual(x, h)
         else:
             x = self.alpha_res * x + self.beta_branch * h
 
         h2 = self.mlp(self.ln_2(x))
         if self.orthogonal_residual:
-            # Remove radial component: project h2 onto normalized x and subtract
-            x_norm = x / x.norm(dim=-1, keepdim=True)
-            radial = (h2 * x_norm).sum(dim=-1, keepdim=True) * x_norm
-            h2 = h2 - radial
+            h2 = self._remove_radial_component(h2, x)
         if self.peri_ln and self.vel_mlp is not None:
             h2 = self.vel_mlp(h2)
-        
         if self.orthogonal_transformer:
-            # Rotation-based residual: x_new = cos(theta) * x + sin(theta) * (h2_unit * sqrt(d))
-            sqrt_d = math.sqrt(self.n_embd)
-            h2_norm = h2.norm(dim=-1, keepdim=True)  # |h2|
-            theta = h2_norm / sqrt_d  # theta = |h2| / sqrt(d)
-            h2_normalized = h2 / theta  # h2 / theta = h2_unit * sqrt(d)
-            x = torch.cos(theta) * x + torch.sin(theta) * h2_normalized
+            x = self._apply_rotation_residual(x, h2)
         else:
             x = self.alpha_res * x + self.beta_branch * h2
         return x
@@ -207,6 +227,7 @@ class GPTConfig:
     peri_ln: bool = False # If True, apply VelNorm on each branch output before residual addition (pre-LN only)
     orthogonal_residual: bool = False # If True, remove radial component from branch outputs (make them orthogonal to residual)
     orthogonal_transformer: bool = False # If True, use rotation-based residual addition (implies orthogonal_residual=True)
+    eps_tan: float = 1e-6  # small angle threshold for orthogonal_transformer: use Taylor approximation when theta < eps_tan
     # residual/branch scaling inside each block: x <- alpha_res * x + beta_branch * branch(x)
     # (not used when orthogonal_transformer=True, which uses rotation formula instead)
     alpha_res: float = 1.0

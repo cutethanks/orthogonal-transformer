@@ -82,6 +82,7 @@ peri_ln = False
 peri_ln_learnable = True
 orthogonal_residual = False
 orthogonal_transformer = False
+eps_tan = 1e-6
 alpha_res = 1.0
 beta_branch = 1.0
 vel_weight = 1.0
@@ -194,6 +195,7 @@ model_args.update(dict(rmsnorm=rmsnorm, ln_learnable=ln_learnable,
                        peri_ln=peri_ln, peri_ln_learnable=peri_ln_learnable,
                        orthogonal_residual=orthogonal_residual,
                        orthogonal_transformer=orthogonal_transformer,
+                       eps_tan=eps_tan,
                        alpha_res=alpha_res, beta_branch=beta_branch, vel_weight=vel_weight,
                        tie_emb_unemb=tie_emb_unemb,
                        ln_emb=ln_emb,
@@ -246,7 +248,7 @@ elif init_from == 'resume':
     # the rest of the attributes (e.g. dropout) can stay as desired from command line
     for k in ['n_layer', 'n_head', 'n_embd', 'block_size', 'bias', 'vocab_size',
               'rmsnorm', 'ln_learnable',
-              'peri_ln', 'peri_ln_learnable', 'orthogonal_residual', 'orthogonal_transformer',
+              'peri_ln', 'peri_ln_learnable', 'orthogonal_residual', 'orthogonal_transformer', 'eps_tan',
               'alpha_res', 'beta_branch', 'vel_weight',
               'tie_emb_unemb', 'ln_emb',
               'sigma_w', 'sigma_qk', 'sigma_emb', 'sigma_unemb']:
