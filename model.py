@@ -30,7 +30,7 @@ class LayerNorm(nn.Module):
 class RMSNorm(nn.Module):
     """ Root Mean Square Layer Normalization (RMSNorm) without mean centering. """
 
-    def __init__(self, ndim, eps: float = 1e-8):
+    def __init__(self, ndim, eps: float = 1e-5):
         super().__init__()
         self.weight = nn.Parameter(torch.ones(ndim))
         self.eps = eps
@@ -136,13 +136,20 @@ class Block(nn.Module):
         # residual/branch scaling (non-trainable hyperparameters)
         self.alpha_res = float(getattr(config, 'alpha_res', 1.0))
         self.beta_branch = float(getattr(config, 'beta_branch', 1.0))
+        
+        # Layernorms before attention/MLP (not needed for orthogonal_transformer)
         use_rms = getattr(config, 'rmsnorm', True)
-        if use_rms:
-            self.ln_1 = RMSNorm(config.n_embd)
-            self.ln_2 = RMSNorm(config.n_embd)
+        if not self.orthogonal_transformer:
+            if use_rms:
+                self.ln_1 = RMSNorm(config.n_embd)
+                self.ln_2 = RMSNorm(config.n_embd)
+            else:
+                self.ln_1 = LayerNorm(config.n_embd, bias=config.bias)
+                self.ln_2 = LayerNorm(config.n_embd, bias=config.bias)
         else:
-            self.ln_1 = LayerNorm(config.n_embd, bias=config.bias)
-            self.ln_2 = LayerNorm(config.n_embd, bias=config.bias)
+            self.ln_1 = None
+            self.ln_2 = None
+        
         self.attn = CausalSelfAttention(config)
         self.mlp = MLP(config)
         # Optional per-branch VelNorm right after attention/MLP outputs (before residual addition)
@@ -181,7 +188,9 @@ class Block(nn.Module):
             return (1 - theta.pow(2) / 2) * x + h
         elif small_angle.any():
             # Mixed case: use approximation where theta is small, rotation otherwise
-            h_normalized = h / theta  # h_unit * sqrt(d)
+            # Avoid division by zero: replace small theta with 1.0 (value doesn't matter since we'll use approximation there)
+            theta_safe = torch.where(small_angle, torch.ones_like(theta), theta)
+            h_normalized = h / theta_safe  # h_unit * sqrt(d)
             x_new = torch.cos(theta) * x + torch.sin(theta) * h_normalized
             # Replace with approximation where theta is small
             x_approx = (1 - theta.pow(2) / 2) * x + h
@@ -192,9 +201,12 @@ class Block(nn.Module):
             return torch.cos(theta) * x + torch.sin(theta) * h_normalized
 
     def forward(self, x):
-        # Pre-LN: x -> norm -> attn -> (optional orthogonalization) -> (optional VelNorm) -> add -> 
-        #         norm -> mlp -> (optional orthogonalization) -> (optional VelNorm) -> add
-        h = self.attn(self.ln_1(x))
+        # Pre-LN (or no norm for orthogonal_transformer): x -> [norm] -> attn -> (optional orthogonalization) -> 
+        #                                                  (optional VelNorm) -> add -> [norm] -> mlp -> 
+        #                                                  (optional orthogonalization) -> (optional VelNorm) -> add
+        # Apply ln_1 before attention (skip if orthogonal_transformer)
+        x_attn = self.ln_1(x) if self.ln_1 is not None else x
+        h = self.attn(x_attn)
         if self.orthogonal_residual:
             h = self._remove_radial_component(h, x)
         if self.peri_ln and self.vel_attn is not None:
@@ -204,7 +216,9 @@ class Block(nn.Module):
         else:
             x = self.alpha_res * x + self.beta_branch * h
 
-        h2 = self.mlp(self.ln_2(x))
+        # Apply ln_2 before MLP (skip if orthogonal_transformer)
+        x_mlp = self.ln_2(x) if self.ln_2 is not None else x
+        h2 = self.mlp(x_mlp)
         if self.orthogonal_residual:
             h2 = self._remove_radial_component(h2, x)
         if self.peri_ln and self.vel_mlp is not None:
@@ -261,14 +275,16 @@ class GPT(nn.Module):
         orthogonal_transformer = getattr(config, 'orthogonal_transformer', False)
         ln_emb_enabled = getattr(config, 'ln_emb', False) or orthogonal_transformer
 
-        # Build transformer container with final layernorm (always present in pre-LN)
+        # Build transformer container
         tfm_dict = dict(
             wte = nn.Embedding(config.vocab_size, config.n_embd),
             wpe = nn.Embedding(config.block_size, config.n_embd),
             drop = nn.Dropout(config.dropout),
             h = nn.ModuleList([Block(config) for _ in range(config.n_layer)]),
-            ln_f = Norm(config.n_embd) if use_rms else Norm(config.n_embd, bias=config.bias),
         )
+        # Add final layernorm (not needed for orthogonal_transformer)
+        if not orthogonal_transformer:
+            tfm_dict['ln_f'] = Norm(config.n_embd) if use_rms else Norm(config.n_embd, bias=config.bias)
         # Add ln_emb if explicitly requested or if orthogonal_transformer is True
         if ln_emb_enabled:
             tfm_dict['ln_emb'] = Norm(config.n_embd) if use_rms else Norm(config.n_embd, bias=config.bias)
@@ -408,8 +424,9 @@ class GPT(nn.Module):
         # x = tok_emb + pos_emb
         x = tok_emb
         x = self._forward_from_embeddings(x)
-        # apply final layernorm (always present in pre-LN)
-        x = self.transformer.ln_f(x)
+        # apply final layernorm (skip for orthogonal_transformer)
+        if hasattr(self.transformer, 'ln_f'):
+            x = self.transformer.ln_f(x)
 
         if targets is not None:
             # if we are given some desired targets also calculate the loss
