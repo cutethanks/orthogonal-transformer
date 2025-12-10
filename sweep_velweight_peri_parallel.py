@@ -5,7 +5,8 @@ import time
 import os
 
 # Sigmas you want to sweep
-sigma_ws = [0.32, 0.44, 0.55, 0.63]
+# sigma_ws = [0.32, 0.44, 0.55, 0.63]
+sigma_ws = [0.15, 0.2, 0.25]
 # sigma_ws = [0.63, 0.71, 0.77]
 
 # Base command
