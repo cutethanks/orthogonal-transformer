@@ -5,14 +5,14 @@ import time
 import os
 
 # Sigmas you want to sweep
-# sigma_ws = [0.32, 0.44, 0.55, 0.63, 0.71, 0.77, 0.83]
-sigma_ws = [0.63, 0.71, 0.77]
+sigma_ws = [0.32, 0.44, 0.55, 0.63]
+# sigma_ws = [0.63, 0.71, 0.77]
 
 # Base command
 base = ['python', 'train.py', 'config/train_small_model_exps.py', '--compile=False']
 
 # How many experiments to run at once
-MAX_PARALLEL = 3   # start with 2 or 3; you can adjust upward if VRAM is fine
+MAX_PARALLEL = 4   # start with 2 or 3; you can adjust upward if VRAM is fine
 
 procs = []
 
