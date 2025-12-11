@@ -182,7 +182,6 @@ class Block(nn.Module):
         # cos(theta) ≈ 1 - theta^2/2, sin(theta) ≈ theta
         # So: cos(theta) * x + sin(theta) * h_normalized ≈ (1 - theta^2/2) * x + h
         small_angle = theta < self.eps_tan
-        print("small angle percentage:", small_angle.sum()/small_angle.numel()*100)
         
         if small_angle.all():
             # Use approximation for all elements
