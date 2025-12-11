@@ -185,20 +185,18 @@ class Block(nn.Module):
         
         if small_angle.all():
             # Use approximation for all elements
-            return (1 - theta.pow(2) / 2) * x + h
+            return x + h
         elif small_angle.any():
             # Mixed case: use approximation where theta is small, rotation otherwise
             # Avoid division by zero: replace small theta with 1.0 (value doesn't matter since we'll use approximation there)
             theta_safe = torch.where(small_angle, torch.ones_like(theta), theta)
-            h_normalized = h / theta_safe  # h_unit * sqrt(d)
-            x_new = torch.cos(theta) * x + torch.sin(theta) * h_normalized
+            x_new = torch.cos(theta) * x + torch.sin(theta)/theta_safe * h
             # Replace with approximation where theta is small
-            x_approx = (1 - theta.pow(2) / 2) * x + h
+            x_approx = x + h
             return torch.where(small_angle, x_approx, x_new)
         else:
             # Full rotation for all elements
-            h_normalized = h / theta  # h_unit * sqrt(d)
-            return torch.cos(theta) * x + torch.sin(theta) * h_normalized
+            return torch.cos(theta) * x + torch.sin(theta)/theta * h
 
     def forward(self, x):
         # Pre-LN (or no norm for orthogonal_transformer): x -> [norm] -> attn -> (optional orthogonalization) -> 
