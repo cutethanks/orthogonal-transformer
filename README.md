@@ -45,20 +45,12 @@ Second, the law governing layer-wise activation norm dynamics also determines th
 
 Let us first assume, for conceptual clarity, that we want to ensure $\lVert x^{(l)} \rVert = 1$ at each layer. In our practical implementation, considered in the next section, we instead choose to keep $\lVert x^{(l)} \rVert = \sqrt{d}$, as this is more natural given the standard definition of RMSNorm.
 
-Instead of directly adding the residual block output $u^{(l)}$ to the residual stream $x^{(l)}$, we propose viewing the two-dimensional plane they span as a rotation plane, with the rotation angle defined by the magnitude of $\lVert u_{\perp}^{(l)} \rVert$. Formally, for a pair $(x, u)$ with $\lVert x \rVert = 1$, we define the bivector $b = x \wedge u$, which naturally maps to an element $B(x, u)$ of the Lie algebra $\mathfrak{so}(d)$ of the Lie group $SO(d)$:
-$$
-B(x, u) = x u^T - u x^T.
-$$
-The expression on the right-hand side does not depend on the radial component of $u$, so we can equivalently write
-$$
-B(x, u) = x u_{\perp}^T - u_{\perp} x^T.
-$$
+Instead of directly adding the residual block output $u^{(l)}$ to the residual stream $x^{(l)}$, we propose viewing the two-dimensional plane they span as a rotation plane, with the rotation angle defined by the magnitude of $\lVert u_{\perp}^{(l)} \rVert$. Formally, for a pair $(x, u)$ with $\lVert x \rVert = 1$, we define the bivector $b = x \wedge u$, which naturally maps to an element $B(x, u)$ of the Lie algebra $\mathfrak{so}(d)$ of the Lie group $SO(d)$: $B(x, u) = x u^T - u x^T$.
+The expression on the right-hand side does not depend on the radial component of $u$, so we can equivalently write $B(x, u) = x u_{\perp}^T - u_{\perp} x^T$.
 Defining the unit vector $\hat{u}_\perp = u_\perp / \lVert u_\perp \rVert$ and omitting the arguments of $B$, we obtain
-
 $$
 B = \theta \hat B,
 $$
-
 where $\theta = \lVert u_\perp \rVert$ and $\hat B = x \hat u_{\perp}^T - \hat u_{\perp} x^T$ is constructed from the pair of orthogonal unit vectors $(x, \hat u_\perp)$. Exponentiating $B$ yields a rotation in $SO(d)$ in the two-dimensional plane spanned by $x$ and $u$:
 
 $$
