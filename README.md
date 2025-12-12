@@ -47,7 +47,7 @@ Let us first assume, for conceptual clarity, that we want to ensure $\lVert x^{(
 
 Instead of directly adding the residual block output $u^{(l)}$ to the residual stream $x^{(l)}$, we propose viewing the two-dimensional plane they span as a rotation plane, with the rotation angle defined by the magnitude of $\lVert u_{\perp}^{(l)} \rVert$. Formally, for a pair $(x, u)$ with $\lVert x \rVert = 1$, we define the bivector $b = x \wedge u$, which naturally maps to an element $B(x, u)$ of the Lie algebra $\mathfrak{so}(d)$ of the Lie group $SO(d)$: $B(x, u) = x u^T - u x^T$.
 The expression on the right-hand side does not depend on the radial component of $u$, so we can equivalently write $B(x, u) = x u_{\perp}^T - u_{\perp} x^T$.
-Defining the unit vector ${\hat{u}_{\perp}} = u_\perp / {\lVert{u_\perp}\rVert}$ and omitting the arguments of $B$, we obtain
+Defining the unit vector $\hat u_\perp = u_\perp / {\lVert u_\perp \rVert}$ and omitting the arguments of $B$, we obtain
 
 $$
 B = \theta \hat{B},
@@ -83,7 +83,7 @@ In the limit of small $\theta$, this update rule reproduces the residual additio
 
 #### Implementation
 
-In practice, we choose to keep $\lVert x^{(l)} \rVert = \sqrt{d}$, so we redefine $b = \frac{x}{\sqrt{d}} \wedge \frac{\hat{u_{\perp}}}{\sqrt{d}}$.
+In practice, we choose to keep $\lVert x^{(l)} \rVert = \sqrt{d}$, so we redefine $b = \frac{x}{\sqrt{d}} \wedge \frac{\hat u{\perp}}{\sqrt{d}}$.
 Thus, $B = \theta \hat{B}$, where $\theta = \lVert u_\perp \rVert / \sqrt{d}$ and $\hat B = x \hat u_{\perp}^T - \hat u_{\perp} x^T$ is constructed from the pair of orthogonal unit vectors $(\hat{x}, \hat{u}_\perp)$ as above, with $\hat{x} = x / \sqrt{d}$. Equations (5) and (8) retain their form with the redefined $\theta$.
 
 To avoid division by zero in Eq. (8), we introduce a threshold $\epsilon$ such that, when $\theta < \epsilon$, we replace the update rule with the residual addition formula $x^{(l+1)} = x^{(l)} + u_\perp^{(l)}$. We introduce a single RMSNorm layer with non-learnable weights after the token embeddings and remove all other RMSNorm layers, including the final one, since the residual stream remains normalized under our update rule.
