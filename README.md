@@ -39,13 +39,13 @@ $$
 = \frac{\sqrt{d}}{\lVert x\rVert}\left(\delta_{ij}-\frac{x_i x_j}{\lVert x\rVert^2}\right).
 $$
 
-Second, the law governing layer-wise activation norm dynamics also determines the law governing layer-wise gradient norm dynamics (see, e.g., [refs]). At initialization, layer-wise activation norms approximately follow the square-root law $\lVert x^{(l)} \rVert \sim \sqrt{l}$, which results in the corresponding gradient norms following the inverse square-root law $\lVert g^{(l)} \rVert \sim 1 / \sqrt{l}$. The first statement follows directly from Eq. (2), applied recursively to the initial token embedding, under the assumption that the velocities $u^{(l)}$ are approximately orthogonal to the representation vectors $x^{(l)}$, which is justified by the random Gaussian initialization of the weight matrices in the linear maps of the MLP and attention blocks. For a proof of the second statement, we refer to [[Doshi et al., 2023]; [Kedia et al., 2024]].
+Second, the law governing layer-wise activation norm dynamics also determines the law governing layer-wise gradient norm dynamics. At initialization, layer-wise activation norms approximately follow the square-root law $\lVert x^{(l)} \rVert \sim \sqrt{l}$, which results in the corresponding gradient norms following the inverse square-root law $\lVert g^{(l)} \rVert \sim 1 / \sqrt{l}$. The first statement follows directly from Eq. (2), applied recursively to the initial token embedding, under the assumption that the velocities $u^{(l)}$ are approximately orthogonal to the representation vectors $x^{(l)}$, which is justified by the random Gaussian initialization of the weight matrices in the linear maps of the MLP and attention blocks. For a proof of the second statement, we refer to [[Doshi et al., 2023]; [Kedia et al., 2024]].
 
 #### Orthogonal Transformer update rule
 
 Let us first assume, for conceptual clarity, that we want to ensure $\lVert x^{(l)} \rVert = 1$ at each layer. In our practical implementation, considered in the next section, we instead choose to keep $\lVert x^{(l)} \rVert = \sqrt{d}$, as this is more natural given the standard definition of RMSNorm.
 
-Instead of directly adding the residual block output $u^{(l)}$ to the residual stream $x^{(l)}$, we propose viewing the two-dimensional plane they span as a rotation plane, with the rotation angle defined by the magnitude of $\lVert u^{(l)}_{\perp} \rVert$. Formally, for a pair $(x, u)$ with $\lVert x \rVert = 1$, we define the bivector $b = x \wedge u$, which naturally maps to an element $B(x, u)$ of the Lie algebra $\mathfrak{so}(d)$ of the Lie group $SO(d)$:
+Instead of directly adding the residual block output $u^{(l)}$ to the residual stream $x^{(l)}$, we propose viewing the two-dimensional plane they span as a rotation plane, with the rotation angle defined by the magnitude of $\lVert u_{\perp}^{(l)} \rVert$. Formally, for a pair $(x, u)$ with $\lVert x \rVert = 1$, we define the bivector $b = x \wedge u$, which naturally maps to an element $B(x, u)$ of the Lie algebra $\mathfrak{so}(d)$ of the Lie group $SO(d)$:
 $$
 B(x, u) = x u^T - u x^T.
 $$
