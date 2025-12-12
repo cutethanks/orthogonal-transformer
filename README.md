@@ -22,7 +22,7 @@ x^{(l+1)}_s &= x^{(l)}_s + u^{(l)}\left(\tilde x^{(l)}_s\right), && \text{for od
 \end{aligned}
 $$
 
-where $\tilde x^{(l)}_s = \mathrm{RMSNorm}(x^{(l)}_s)$ and $S$ is the sequence length. For even $l$, $u_s^{(l)}$ is an attention block whose input is the entire sequence of normalized token representations and whose functional form depends on the position $s$. For odd $l$, $u^{(l)}$ is an MLP block that acts on the normalized token representation at position $s$ with a transformation that does not depend on the positional index. Finally, $x_s^{(0)}$ denotes the initial token embedding at position $s$. Geometrically, RMSNorm maps token representations onto the $(d-1)$-dimensional sphere of radius $\sqrt d$, $S^{d-1}_{\sqrt{d}}$, followed by a learnable diagonal linear map. In what follows, we will not distinguish between MLP and attention transformations and will write both simply as
+where $ \tilde x^{(l)}_s = \mathrm{RMSNorm}(x^{(l)}_s) $ and $ S $ is the sequence length. For even $l$, $u_s^{(l)}$ is an attention block whose input is the entire sequence of normalized token representations and whose functional form depends on the position $s$. For odd $l$, $u^{(l)}$ is an MLP block that acts on the normalized token representation at position $s$ with a transformation that does not depend on the positional index. Finally, $x_s^{(0)}$ denotes the initial token embedding at position $s$. Geometrically, RMSNorm maps token representations onto the $(d-1)$-dimensional sphere of radius $\sqrt d$, $S^{d-1}_{\sqrt{d}}$, followed by a learnable diagonal linear map. In what follows, we will not distinguish between MLP and attention transformations and will write both simply as
 
 $$
 x^{(l+1)} = x^{(l)} + u^{(l)},
