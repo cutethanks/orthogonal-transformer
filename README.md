@@ -30,7 +30,7 @@ $$
 
 omitting the positional index $s$ as well.
 
-The vector $u^{(l)} \in \mathbb{R}^d$ can be decomposed into radial and tangential components, $u^{(l)} = u^{(l)}_{\parallel} + u^{(l)}_{\perp}$, with the radial component aligned with $x^{(l)}$ and the tangential component orthogonal to $x^{(l)}$ in the sense of the standard inner product on $\mathbb{R}^d$. Before mapping representation vectors to logits, the output of the final transformer block $x^{(2L)}$ is mapped to the sphere $S^{d-1}_{\sqrt{d}}$ for the last time. Thus, radial motion has no direct effect on the final logits produced by the model, as it is completely projected out by the final RMSNorm.
+The vector $u^{(l)} \in \mathbb{R}^d$ can be decomposed into radial and tangential components, $u^{(l)} = u_{\parallel}^{(l)} + u_{\perp}^{(l)}$, with the radial component aligned with $x^{(l)}$ and the tangential component orthogonal to $x^{(l)}$ in the sense of the standard inner product on $\mathbb{R}^d$. Before mapping representation vectors to logits, the output of the final transformer block $x^{(2L)}$ is mapped to the sphere $S^{d-1}_{\sqrt{d}}$ for the last time. Thus, radial motion has no direct effect on the final logits produced by the model, as it is completely projected out by the final RMSNorm.
 
 On the other hand, radial motion does affect gradient backpropagation. First, the final RMSNorm rescales the gradient passing through it with a coefficient proportional to $1 / \lVert x^{(2L)} \rVert$, the inverse norm of the pre-RMSNorm activation vector, which can be seen from its Jacobian:
 
