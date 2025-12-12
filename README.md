@@ -49,7 +49,7 @@ Instead of directly adding the residual block output $u^{(l)}$ to the residual s
 The expression on the right-hand side does not depend on the radial component of $u$, so we can equivalently write $B(x, u) = x u_{\perp}^T - u_{\perp} x^T$.
 Defining the unit vector $\hat{u}_\perp = u_\perp / \lVert u_\perp \rVert$ and omitting the arguments of $B$, we obtain
 $$
-B = \theta \hat B,
+B = \theta \hat{B},
 $$
 where $\theta = \lVert u_\perp \rVert$ and $\hat B = x \hat u_{\perp}^T - \hat u_{\perp} x^T$ is constructed from the pair of orthogonal unit vectors $(x, \hat u_\perp)$. Exponentiating $B$ yields a rotation in $SO(d)$ in the two-dimensional plane spanned by $x$ and $u$:
 
