@@ -7,7 +7,7 @@ import os
 # Sigmas you want to sweep
 # sigma_ws = [0.25, 0.32, 0.44, 0.5, 0.55, 0.63]
 # sigma_ws = [0.4, 0.5, 0.6, 0.8, 1.0, 1.2]
-sigma_ws = [0.38]
+sigma_ws = [0.3, 0.45, 0.6]
 
 # Base command
 base = ['python', 'train.py', 'config/train_small_model_exps.py', '--compile=False']

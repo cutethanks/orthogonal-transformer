@@ -34,7 +34,7 @@ peri_ln = False
 peri_ln_learnable = False
 orthogonal_residual = False
 orthogonal_transformer = True
-eps_tan = 1e-6
+eps_tan = 1e-4
 
 # initialization parameters
 # MLP parameters
