@@ -79,20 +79,14 @@ $$
 x^{(l+1)} = x^{(l)} \cos \theta + u^{(l)}_\perp \frac{\sin \theta}{\theta}.
 $$
 
-In the limit of small $\theta$, this update rule reproduces the residual addition formula with the radial component of $u^{(l)}$ projected out:
-$$
-x^{(l+1)} = x^{(l)} + u^{(l)}_\perp.
-$$
+In the limit of small $\theta$, this update rule reproduces the residual addition formula with the radial component of $u^{(l)}$ projected out: $x^{(l+1)} = x^{(l)} + u_\perp^{(l)}$.
 
 #### Implementation
 
-In practice, we choose to keep $\lVert x^{(l)} \rVert = \sqrt{d}$, so we redefine
-$$
-b = \frac{x}{\sqrt{d}} \wedge \frac{\hat{u}_{\perp}}{\sqrt{d}}.
-$$
-Thus, $B = \theta \hat{B}$, where $\theta = \lVert u_\perp \rVert / \sqrt{d}$ and $\hat{B} = \hat{x}\, \hat{u}_{\perp}^\top - \hat{u}_{\perp} \hat{x}^\top$ is constructed from the pair of orthogonal unit vectors $(\hat{x}, \hat{u}_\perp)$ as above, with $\hat{x} = x / \sqrt{d}$. Equations (5) and (8) retain their form with the redefined $\theta$.
+In practice, we choose to keep $\lVert x^{(l)} \rVert = \sqrt{d}$, so we redefine $ b = \frac{x}{\sqrt{d}} \wedge \frac{\hat{u_{\perp}}}{\sqrt{d}}$.
+Thus, $B = \theta \hat{B}$, where $\theta = \lVert u_\perp \rVert / \sqrt{d}$ and $\hat{B} = \hat{x}\, \hat{u_{\perp}}^\top - \hat{u_{\perp}} \hat{x}^\top$ is constructed from the pair of orthogonal unit vectors $(\hat{x}, \hat{u}_\perp)$ as above, with $\hat{x} = x / \sqrt{d}$. Equations (5) and (8) retain their form with the redefined $\theta$.
 
-To avoid division by zero in Eq. (8), we introduce a threshold $\epsilon$ such that, when $\theta < \epsilon$, we replace the update rule with the residual addition formula $x^{(l+1)} = x^{(l)} + u^{(l)}_\perp$. We introduce a single RMSNorm layer with non-learnable weights after the token embeddings and remove all other RMSNorm layers, including the final one, since the residual stream remains normalized under our update rule.
+To avoid division by zero in Eq. (8), we introduce a threshold $\epsilon$ such that, when $\theta < \epsilon$, we replace the update rule with the residual addition formula $x^{(l+1)} = x^{(l)} + u_\perp^{(l)}$. We introduce a single RMSNorm layer with non-learnable weights after the token embeddings and remove all other RMSNorm layers, including the final one, since the residual stream remains normalized under our update rule.
 
 ### Experiments
 
