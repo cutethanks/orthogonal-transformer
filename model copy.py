@@ -125,7 +125,7 @@ class MLP(nn.Module):
 
 class Block(nn.Module):
 
-    def __init__(self, config, layer_idx: Optional[int] = None):
+    def __init__(self, config):
         super().__init__()
         self.peri_ln = getattr(config, 'peri_ln', False)
         self.orthogonal_transformer = getattr(config, 'orthogonal_transformer', False)
@@ -136,14 +136,7 @@ class Block(nn.Module):
         # residual/branch scaling (non-trainable hyperparameters)
         self.alpha_res = float(getattr(config, 'alpha_res', 1.0))
         self.beta_branch = float(getattr(config, 'beta_branch', 1.0))
-
-        # Per-layer scaling factor for sigma_w in this block (both MLP and attention)
-        if layer_idx is not None and layer_idx > 0:
-            # scale sigma_w by 1 / l^(1/4), where l is the 1-based layer index
-            self.sigma_w_scale = 1.0 / (float(layer_idx) ** 0.25)
-        else:
-            self.sigma_w_scale = 1.0
-
+        
         # Layernorms before attention/MLP (not needed for orthogonal_transformer)
         use_rms = getattr(config, 'rmsnorm', True)
         if not self.orthogonal_transformer:
@@ -156,15 +149,9 @@ class Block(nn.Module):
         else:
             self.ln_1 = None
             self.ln_2 = None
-
+        
         self.attn = CausalSelfAttention(config)
         self.mlp = MLP(config)
-
-        # Tag attention and MLP Linear layers with this block's sigma_w scaling factor
-        self.attn.c_attn._sigma_w_scale = self.sigma_w_scale
-        self.attn.c_proj._sigma_w_scale = self.sigma_w_scale
-        self.mlp.c_fc._sigma_w_scale = self.sigma_w_scale
-        self.mlp.c_proj._sigma_w_scale = self.sigma_w_scale
         # Optional per-branch VelNorm right after attention/MLP outputs (before residual addition)
         self.vel_attn = None
         self.vel_mlp = None
@@ -291,7 +278,7 @@ class GPT(nn.Module):
             wte = nn.Embedding(config.vocab_size, config.n_embd),
             wpe = nn.Embedding(config.block_size, config.n_embd),
             drop = nn.Dropout(config.dropout),
-            h = nn.ModuleList([Block(config, layer_idx=i+1) for i in range(config.n_layer)]),
+            h = nn.ModuleList([Block(config) for _ in range(config.n_layer)]),
         )
         # Add final layernorm (not needed for orthogonal_transformer)
         if not orthogonal_transformer:
@@ -342,12 +329,10 @@ class GPT(nn.Module):
                 std = sigma / math.sqrt(d_in) if d_in > 0 else 0.02
             elif getattr(module, "_is_mlp_linear", False):
                 sigma = getattr(self.config, 'sigma_w', 1.0)
-                scale = getattr(module, "_sigma_w_scale", 1.0)
-                std = sigma * scale * math.sqrt(2.0) / math.sqrt(d_in) if d_in > 0 else 0.02
+                std = sigma * math.sqrt(2.0) / math.sqrt(d_in) if d_in > 0 else 0.02
             else:
                 sigma = getattr(self.config, 'sigma_w', 1.0)
-                scale = getattr(module, "_sigma_w_scale", 1.0)
-                std = sigma * scale / math.sqrt(d_in) if d_in > 0 else 0.02
+                std = sigma / math.sqrt(d_in) if d_in > 0 else 0.02
             torch.nn.init.normal_(module.weight, mean=0.0, std=std)
             if module.bias is not None:
                 torch.nn.init.zeros_(module.bias)

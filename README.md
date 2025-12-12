@@ -68,7 +68,7 @@ $$
 Using the explicit form of the exponential map, the expression for $x^{(l+1)}$ simplifies to
 
 $$
-x^{(l+1)} = x^{(l)} \cos \theta + \hat{u}^{(l)}_{\perp} \sin \theta,
+x^{(l+1)} = x^{(l)}\, \cos \theta + \hat{u}^{(l)}_{\perp}\, \sin \theta,
 $$
 
 with $\theta = \lVert u_\perp^{(l)} \rVert$. By construction, this map exactly preserves the unit norm of the representation vectors, given that $\lVert x^{(0)} \rVert = 1$. We emphasize that projecting out the radial component of the MLP/attention output and residual rescaling arise naturally in this approach and are unified by it. The novelty here is that, instead of using constant rescaling coefficients treated as hyperparameters requiring tuning, the coefficients are dynamically determined by the magnitude of the tangential component of $u^{(l)}$.
@@ -76,7 +76,7 @@ with $\theta = \lVert u_\perp^{(l)} \rVert$. By construction, this map exactly p
 Note that Eq. (7) can be written in terms of the non-normalized generator $u^{(l)}_{\perp}$ as follows:
 
 $$
-x^{(l+1)} = x^{(l)} \cos \theta + u^{(l)}_\perp \frac{\sin \theta}{\theta}.
+x^{(l+1)} = x^{(l)}\, \cos \theta + u^{(l)}_\perp\, \frac{\sin \theta}{\theta}.
 $$
 
 In the limit of small $\theta$, this update rule reproduces the residual addition formula with the radial component of $u^{(l)}$ projected out: $x^{(l+1)} = x^{(l)} + u_\perp^{(l)}$.
