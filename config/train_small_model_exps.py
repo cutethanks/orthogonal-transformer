@@ -12,6 +12,7 @@ log_interval = 10 # don't print too too often
 early_stop_patience_steps = None
 always_save_checkpoint = True
 save_final_ckpt = False
+early_stop_patience_steps = 400
 
 wandb_log = False # override via command line if you like
 
