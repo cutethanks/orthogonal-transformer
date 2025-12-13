@@ -38,8 +38,6 @@ python data/shakespeare_char/prepare.py
 python train.py config/train_orthogonal_transformer.py
 ```
 
-- **Other example config**  
-  - `config/train_shakespeare_char.py`: a small baseline character-level GPT config.
 
 - **Hyperparameter sweeps**  
   The script `sweep_params.py` is a small launcher that:
