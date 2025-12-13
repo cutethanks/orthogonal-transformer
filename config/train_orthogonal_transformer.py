@@ -50,8 +50,8 @@ sigma_unemb = 1.0
 vel_weight = 1.0
 
 # Residual/branch scaling parameters
-alpha_res = 1.0
-beta_branch = 1.0
+alpha_id = 1.0
+beta_res = 1.0
 
 # training parameters
 optim = 'adam'

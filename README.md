@@ -1,4 +1,4 @@
-This repository is based on [karpathy/nanoGPT](https://github.com/karpathy/nanoGPT).
+This repository is based on [karpathy/nanoGPT](https://github.com/karpathy/nanoGPT). The list of differences: [DIFF.md](./DIFF.md) 
 
 
 ### TL;DR
