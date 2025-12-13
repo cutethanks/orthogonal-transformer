@@ -102,14 +102,25 @@ In the limit of small $\theta$, this update rule reproduces the residual additio
 #### Implementation
 
 In practice, we choose to keep $\lVert x^{(l)} \rVert = \sqrt{d}$, so we redefine $b = \frac{x}{\sqrt{d}} \wedge \frac{\hat u_\perp}{\sqrt{d}}$.
-Thus, $B = \theta \hat{B}$, where $\theta = \lVert u_\perp \rVert / \sqrt{d}$ and $\hat B = x \hat u_{\perp}^T - \hat u_{\perp} x^T$ is constructed from the pair of orthogonal unit vectors $(\hat{x}, \hat{u}_\perp)$ as above, with $\hat{x} = x / \sqrt{d}$. Equations (5) and (8) retain their form with the redefined $\theta$.
-
-To avoid division by zero in Eq. (8), we introduce a threshold $\epsilon$ such that, when $\theta < \epsilon$, we replace the update rule with the residual addition formula $x^{(l+1)} = x^{(l)} + u_\perp^{(l)}$. We introduce a single RMSNorm layer with non-learnable weights after the token embeddings and remove all other RMSNorm layers, including the final one, since the residual stream remains normalized under our update rule.
+Thus, $B = \theta \hat{B}$, where $\theta = \lVert u_\perp \rVert / \sqrt{d}$ and $\hat B = x \hat u_{\perp}^T - \hat u_{\perp} x^T$ is constructed from the pair of orthogonal unit vectors $(\hat{x}, \hat{u}_\perp)$ as above, with $\hat{x} = x / \sqrt{d}$. Equations (5) and (8) retain their form with the redefined $\theta$. To avoid division by zero in Eq. (8), we introduce a threshold $\epsilon$ such that, when $\theta < \epsilon$, we replace the update rule with the residual addition formula $x^{(l+1)} = x^{(l)} + u_\perp^{(l)}$. 
 
 ### Experiments
 
+Both for the baseline and for the Orthogonal Transformer, we train 16-layer transformers with embedding dimension $d = 256$ and number of attention heads $n_{\text{heads}} = 4$, sweeping over weight initializations. We train them on a language modeling task on the Tiny Shakespeare dataset (1M tokens) with the Adam optimizer ($\text{lr} = 0.004$, $\beta_1=0.9$, $\beta_2 = 0.99$, no weight decay). We initialize the value matrix and output projection matrix in the attention blocks from a Gaussian distribution with variance $\sigma_w^2 / d$. The two matrices in the MLP, $W_1^{d \to 4d}$ and $W_2^{4d \to d}$, are initialized with variances $\sigma_w^2 / d$ and $2\sigma_w^2 / 4d$, respectively (the factor of $2$ in the latter compensates for the $\text{ReLU}$ variance-shrinking factor of $1/2$). The query and key matrices are initialized with variances $\sigma_{qk}^2 / d$, with $\sigma_{qk}$ independent of $\sigma_w$. This choice of initialization allows us to control the magnitude of attention/MLP outputs $u^{(l)}$ at all layers simultaneously, without affecting the attention mechanism itself, i.e., the computation of the attention matrices. Finally, the token embeddings are initialized with component-wise variance $1$.
+
+The baseline transformer uses pre-layer RMS normalization, with no removal of the residual block’s radial component and no residual scaling. In the Orthogonal Transformer, we introduce a single RMSNorm layer with non-learnable weights after the token embeddings and remove all other RMSNorm layers, including the final one, since the residual stream remains normalized under the update rule.
+
+Fig. [] shows that both models achieve comparable validation loss on the held-out subset of the Tiny Shakespeare dataset, with the Orthogonal Transformer showing slightly lower validation loss. Fig. [] compares layer-wise gradient norms at initialization between the two approaches, showing that the Orthogonal Transformer has approximately constant layer-wise gradient norms.
+
+Despite the stability of gradients at initialization in the Orthogonal Transformer, we find that larger values of $\sigma_w$ at initialization may lead to exponentially vanishing gradients at later training steps (Fig. []). The underlying mechanism of this instability remains unclear, and we leave its study for future work. This finding emphasizes that perfect norm preservation of activations and perfect gradient propagation at initialization do not guarantee that this behavior will persist during training (see also [[Pennington et al., 2017]; [Bansal et al., 2018]; [Bachlechner et al., 2020]]), which calls for further studies aimed at a better understanding of training dynamics of deep neural networks. It would also be interesting to compare our approach directly to existing methods that use residual block radial component removal or residual scaling.
 
 ### Conclusion
+
+We presented the Orthogonal Transformer, which replaces residual additions with data-dependent orthogonal rotations defined by the plane spanned by the residual stream $x^{(l)}$ and the residual block output $u^{(l)}$. This update rule exactly preserves activation norms at every layer and training step, while naturally recovering and unifying ideas like radial-component removal and residual rescaling, with coefficients determined dynamically by the tangential residual magnitude rather than tuned hyperparameters. 
+
+On a small language-modeling setup (16 layers, 
+∼10M parameters, Tiny Shakespeare 
+∼1M tokens), the Orthogonal Transformer achieved comparable validation loss to a standard transformer and showed approximately constant layer-wise gradient norms at initialization. However, we found that larger initialization scales can still yield vanishing gradients later in training, indicating that norm preservation and favorable initialization-time propagation do not alone ensure stable optimization throughout training. Future work will investigate this instability and validate the approach at larger scales.
 
 ### References
 See [REFERENCES.md](./REFERENCES.md)
@@ -125,3 +136,7 @@ See [REFERENCES.md](./REFERENCES.md)
 [Zhang et al., 2025]: ./REFERENCES.md#ref-zhang2025grouprepresentationalpositionencoding  
 [Xiong et al., 2020]: ./REFERENCES.md#ref-xiong2020layernormalizationtransformerarchitecture  
 [Zhang and Sennrich, 2019]: ./REFERENCES.md#ref-zhang2019rootmeansquarelayer
+[Bansal et al., 2018]: ./REFERENCES.md#ref-bansal2018gainorthogonalityregularizationstraining
+[Pennington et al., 2017]: ./REFERENCES.md#ref-pennington2017resurrectingsigmoiddeeplearning
+[Bachlechner et al., 2020]: ./REFERENCES.md#ref-bachlechner2020rezeroneedfastconvergence
+

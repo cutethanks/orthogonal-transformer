@@ -114,4 +114,36 @@ layer normalization.” 2019. Available:
 
 </div>
 
+<div id="ref-bansal2018gainorthogonalityregularizationstraining"
+class="csl-entry">
+
+<span class="csl-left-margin">\[12\] </span><span
+class="csl-right-inline">N. Bansal, X. Chen, and Z. Wang, “Can we gain
+more from orthogonality regularizations in training deep CNNs?” 2018.
+Available: <https://arxiv.org/abs/1810.09102></span>
+
+</div>
+
+<div id="ref-pennington2017resurrectingsigmoiddeeplearning"
+class="csl-entry">
+
+<span class="csl-left-margin">\[13\] </span><span
+class="csl-right-inline">J. Pennington, S. S. Schoenholz, and S.
+Ganguli, “Resurrecting the sigmoid in deep learning through dynamical
+isometry: Theory and practice.” 2017. Available:
+<https://arxiv.org/abs/1711.04735></span>
+
+</div>
+
+<div id="ref-bachlechner2020rezeroneedfastconvergence"
+class="csl-entry">
+
+<span class="csl-left-margin">\[14\] </span><span
+class="csl-right-inline">T. Bachlechner, B. P. Majumder, H. H. Mao, G.
+W. Cottrell, and J. McAuley, “ReZero is all you need: Fast convergence
+at large depth.” 2020. Available:
+<https://arxiv.org/abs/2003.04887></span>
+
+</div>
+
 </div>
