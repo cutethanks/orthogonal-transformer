@@ -5,9 +5,9 @@ We present the Orthogonal Transformer, a transformer model in which residual add
 
 The neural network architecture can significantly affect its signal propagation properties, which in turn shape its training dynamics [[Schoenholz et al., 2017]; [Poole et al., 2016]; [Cowsik et al., 2024]]. For a given architecture, each point in the hyperparameter space may be characterized by a quantity called the critical length, which limits the maximum depth of effective signal propagation through the network at initialization. It has been proposed that the best trainability is achieved at the edge of chaos (criticality), where the critical length diverges. Away from criticality, perturbations in the forward pass, as well as gradients in the backward pass, grow or decay exponentially with depth. At criticality, both instead vary according to a power law with some critical exponent [[Doshi et al., 2023]]. Residual connections and pre-layer normalization make a larger region of hyperparameter space critical [[Doshi et al., 2023]], which in practice enables good trainability with less extensive hyperparameter tuning.
 
-Gradient propagation is closely related to forward signal propagation. Indeed, the partial Jacobian matrix between layers $l_0$ and $l$ both locally approximates the chain of layer-wise transformations and directly determines how gradients are transformed when they are propagated from layer $l$ to layer $l_0$ [[Schoenholz et al., 2017]; [Doshi et al., 2023]]. In particular, preserving activation norms in the forward pass is related to maintaining stable gradient norms during backpropagation [[Doshi et al., 2023]; [Kedia et al., 2024]]. A large body of work studies how to build very deep transformers that rely on either post-normalization or residual stream scaling to provide more control over the gradients, at least at initialization [[Kedia et al., 2024]; [Wang et al., 2022]]. Recent works such as [[Kim et al., 2025]; [Oh et al., 2025]] empirically show that normalizing residual block outputs, or projecting out their radial component aligned with the activations, can improve training stability.
+Gradient propagation is closely related to forward signal propagation. Indeed, the partial Jacobian matrix between layers $l_0$ and $l$, with $l>l_0$, both locally approximates the chain of layer-wise transformations and directly determines how gradients are transformed when they are propagated from layer $l$ to layer $l_0$ [[Schoenholz et al., 2017]; [Doshi et al., 2023]]. In particular, preserving activation norms in the forward pass is related to maintaining stable gradient norms during backpropagation [[Doshi et al., 2023]; [Kedia et al., 2024]]. A large body of work studies how to build very deep transformers that rely on either post-normalization or residual stream scaling to provide more control over the gradients, at least at initialization [[Kedia et al., 2024]; [Wang et al., 2022]]. Recent works such as [[Kim et al., 2025]; [Oh et al., 2025]] empirically show that normalizing residual block outputs, or projecting out their radial component aligned with the activations, can improve training stability.
 
-We present a new orthogonal residual update rule for transformers that exactly preserves activation norms in the forward pass and exhibits stable layer-wise gradients. We interpret the input activation to each residual block and its output (attention or MLP) as forming a bivector that generates a rotation in the two-dimensional plane they span. From this viewpoint, techniques like residual stream rescaling and orthogonal residual updates emerge naturally and can be viewed within a single unified framework. A similar geometric construction has recently been applied to positional encodings in transformers [[Zhang et al., 2025]].
+We present a new orthogonal residual update rule for transformers that exactly preserves activation norms in the forward pass at any training step and yields stable layer-wise gradients at initialization. We interpret the input activation to each residual block and its output (attention or MLP) as forming a bivector that generates a rotation in the two-dimensional plane they span. From this viewpoint, techniques like residual stream rescaling and orthogonal residual updates emerge naturally and can be viewed within a single unified framework. A similar geometric construction has recently been applied to positional encodings in transformers [[Zhang et al., 2025]].
 
 ### Orthogonal Transformer
 
@@ -16,16 +16,20 @@ We present a new orthogonal residual update rule for transformers that exactly p
 Let $x_s^{(l)} \in \mathbb{R}^d$ denote the token representation at residual layer $l$ and sequence position $s$. A transformer with $L$ transformer blocks and pre-layer RMS normalization can be viewed as a sequence of $2L$ alternating updates of the form
 
 $$
+\begin{equation}
 \begin{aligned}
 x^{(l+1)}_s &= x^{(l)}_s + u^{(l)}_s\left(\{\tilde x^{(l)}_{s'}\}_{s'=1}^S\right), && \text{for even } l,\\
 x^{(l+1)}_s &= x^{(l)}_s + u^{(l)}\left(\tilde x^{(l)}_s\right), && \text{for odd } l,
 \end{aligned}
+\end{equation}
 $$
 
 where $\tilde x_s^{(l)} = \mathrm{RMSNorm}(x_s^{(l)})$ and $S$ is the sequence length. For even $l$, $u_s^{(l)}$ is an attention block whose input is the entire sequence of normalized token representations and whose functional form depends on the position $s$. For odd $l$, $u^{(l)}$ is an MLP block that acts on the normalized token representation at position $s$ with a transformation that does not depend on the positional index. Finally, $x_s^{(0)}$ denotes the initial token embedding at position $s$. Geometrically, RMSNorm maps token representations onto the $(d-1)$-dimensional sphere of radius $\sqrt d$, $S^{d-1}_{\sqrt{d}}$, followed by a learnable diagonal linear map. In what follows, we will not distinguish between MLP and attention transformations and will write both simply as
 
 $$
+\begin{equation}
 x^{(l+1)} = x^{(l)} + u^{(l)},
+\end{equation}
 $$
 
 omitting the positional index $s$ as well.
@@ -35,11 +39,15 @@ The vector $u^{(l)} \in \mathbb{R}^d$ can be decomposed into radial and tangenti
 On the other hand, radial motion does affect gradient backpropagation. First, the final RMSNorm rescales the gradient passing through it with a coefficient proportional to $1 / \lVert x^{(2L)} \rVert$, the inverse norm of the pre-RMSNorm activation vector, which can be seen from its Jacobian:
 
 $$
+\begin{equation}
 \frac{\partial \mathrm{RMSNorm}^i}{\partial x^j}
 = \frac{\sqrt{d}}{\lVert x\rVert}\left(\delta_{ij}-\frac{x_i x_j}{\lVert x\rVert^2}\right).
+\end{equation}
 $$
 
 Second, the law governing layer-wise activation norm dynamics also determines the law governing layer-wise gradient norm dynamics. At initialization, layer-wise activation norms approximately follow the square-root law $\lVert x^{(l)} \rVert \sim \sqrt{l}$, which results in the corresponding gradient norms following the inverse square-root law $\lVert g^{(l)} \rVert \sim 1 / \sqrt{l}$. The first statement follows directly from Eq. (2), applied recursively to the initial token embedding, under the assumption that the velocities $u^{(l)}$ are approximately orthogonal to the representation vectors $x^{(l)}$, which is justified by the random Gaussian initialization of the weight matrices in the linear maps of the MLP and attention blocks. For a proof of the second statement, we refer to [[Doshi et al., 2023]; [Kedia et al., 2024]].
+
+[[Oh et al., 2025]] empirically demonstrate that the update rule $x^{(l+1)} = x^{(l)} + u_\perp^{(l)}$, which projects out the radial component of the residual block output, can improve generalization accuracy and training stability. [[Kedia et al., 2024]] achieve stable training of a 1000-layer transformer via residual rescaling, using the update rule $x^{(l+1)} = \lambda x^{(l)} + \beta u^{(l)}$, where $\lambda^2 + \beta^2 = 1$ and $x^{(l)}$ and $u^{(l)}$ are assumed to be orthogonal and to have approximately the same norm, which can be achieved through proper initialization. In the next section, we show that these two approaches can be unified within a single framework.
 
 #### Orthogonal Transformer update rule
 
@@ -50,25 +58,33 @@ The expression on the right-hand side does not depend on the radial component of
 Defining the unit vector $\hat u_\perp = u_\perp / {\lVert u_\perp \rVert}$ and omitting the arguments of $B$, we obtain
 
 $$
+\begin{equation}
 B = \theta \hat{B},
+\end{equation}
 $$
 
 where $\theta = \lVert u_\perp \rVert$ and $\hat B = x \hat u_{\perp}^T - \hat u_{\perp} x^T$ is constructed from the pair of orthogonal unit vectors $(x, \hat u_\perp)$. Exponentiating $B$ yields a rotation in $SO(d)$ in the two-dimensional plane spanned by $x$ and $u$:
 
 $$
+\begin{equation}
 \exp(B) = I + \hat{B} \sin\theta + \hat{B}^2 (1-\cos\theta).
+\end{equation}
 $$
 
 We now define the transformation in the $l$-th transformer layer as
 
 $$
+\begin{equation}
 x^{(l+1)} = \exp\left(B(x^{(l)},u^{(l)})\right)x^{(l)}.
+\end{equation}
 $$
 
 Using the explicit form of the exponential map, the expression for $x^{(l+1)}$ simplifies to
 
 $$
+\begin{equation}
 x^{(l+1)} = x^{(l)}\, \cos \theta + \hat{u}^{(l)}_{\perp}\, \sin \theta,
+\end{equation}
 $$
 
 with $\theta = \lVert u_\perp^{(l)} \rVert$. By construction, this map exactly preserves the unit norm of the representation vectors, given that $\lVert x^{(0)} \rVert = 1$. We emphasize that projecting out the radial component of the MLP/attention output and residual rescaling arise naturally in this approach and are unified by it. The novelty here is that, instead of using constant rescaling coefficients treated as hyperparameters requiring tuning, the coefficients are dynamically determined by the magnitude of the tangential component of $u^{(l)}$.
@@ -76,7 +92,9 @@ with $\theta = \lVert u_\perp^{(l)} \rVert$. By construction, this map exactly p
 Note that Eq. (7) can be written in terms of the non-normalized generator $u^{(l)}_{\perp}$ as follows:
 
 $$
+\begin{equation}
 x^{(l+1)} = x^{(l)}\, \cos \theta + u^{(l)}_\perp\, \frac{\sin \theta}{\theta}.
+\end{equation}
 $$
 
 In the limit of small $\theta$, this update rule reproduces the residual addition formula with the radial component of $u^{(l)}$ projected out: $x^{(l+1)} = x^{(l)} + u_\perp^{(l)}$.
@@ -89,6 +107,7 @@ Thus, $B = \theta \hat{B}$, where $\theta = \lVert u_\perp \rVert / \sqrt{d}$ an
 To avoid division by zero in Eq. (8), we introduce a threshold $\epsilon$ such that, when $\theta < \epsilon$, we replace the update rule with the residual addition formula $x^{(l+1)} = x^{(l)} + u_\perp^{(l)}$. We introduce a single RMSNorm layer with non-learnable weights after the token embeddings and remove all other RMSNorm layers, including the final one, since the residual stream remains normalized under our update rule.
 
 ### Experiments
+
 
 ### Conclusion
 
