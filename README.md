@@ -3,13 +3,17 @@ This repository is based on [karpathy/nanoGPT](https://github.com/karpathy/nanoG
 
 ### TL;DR
 It implements the Orthogonal Transformer, in which the residual addition is replaced with a proper rotation in the plane spanned by the activation vector $x^{(l)} \in \mathbb{R}^d$ and the MLP/attention output $u^{(l)} \in \mathbb{R}^d$ at the $l$-th layer, according to the following formula:
+
 $$
 x^{(l+1)} = \exp\left(B(x^{(l)},u^{(l)})\right)x^{(l)},
 $$
+
 where $B(x^{(l)}, u^{(l)})$ is the rotation generator. In practice, this reduces to
+
 $$
 x^{(l+1)} = x^{(l)}{} \cos \theta + u_{\perp}^{(l)}{} \frac{\sin \theta}{\theta},
 $$
+
 with $\theta = \lVert u_{\perp}^{(l)} \rVert/\sqrt{d}$ and $u_{\perp}^{(l)}$ being the tangential component of $u^{(l)}$.
 
 ### Orthogonal Transformer: Quick Usage
