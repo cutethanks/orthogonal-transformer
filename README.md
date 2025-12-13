@@ -8,7 +8,7 @@ $$
 x^{(l+1)} = \exp\left(B(x^{(l)},u^{(l)})\right)x^{(l)},
 $$
 
-where $B(x^{(l)}, u^{(l)})$ is the rotation generator. In practice, this reduces to
+where $B(x^{(l)}, u^{(l)})$ is the rotation generator (see details in the mini-paper below). In practice, this reduces to
 
 $$
 x^{(l+1)} = x^{(l)}{} \cos \theta + u_{\perp}^{(l)}{} \frac{\sin \theta}{\theta},
