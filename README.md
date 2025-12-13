@@ -83,7 +83,7 @@ Using the explicit form of the exponential map, the expression for $x^{(l+1)}$ s
 
 $$
 \begin{equation}
-x^{(l+1)} = x^{(l)}\, \cos \theta + \hat{u}^{(l)}_{\perp}\, \sin \theta,
+x^{(l+1)} = x^{(l)}{} \cos \theta + \hat{u}^{(l)}_{\perp}{} \sin \theta,
 \end{equation}
 $$
 
