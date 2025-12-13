@@ -7,10 +7,9 @@ import os
 # Sigmas you want to sweep
 # sigma_ws = [0.25, 0.32, 0.44, 0.5, 0.55, 0.63]
 sigma_ws = [0.2, 0.25, 0.3, 0.35, 0.55]
-# sigma_ws = [0.2, 0.35, 0.4]
 
 # Base command
-base = ['python', 'train.py', 'config/train_small_model_exps.py', '--compile=False']
+base = ['python', 'train.py', 'config/train_orthogonal_transformer.py', '--compile=False']
 
 # How many experiments to run at once
 MAX_PARALLEL = 3   # start with 2 or 3; you can adjust upward if VRAM is fine

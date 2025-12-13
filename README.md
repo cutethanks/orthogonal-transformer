@@ -1,3 +1,54 @@
+This repository is based on [karpathy/nanoGPT](https://github.com/karpathy/nanoGPT).
+
+
+### TL;DR
+It implements the Orthogonal Transformer, in which the residual addition is replaced with a proper rotation in the plane spanned by the activation vector $x^{(l)} \in \mathbb{R}^d$ and the MLP/attention output $u^{(l)} \in \mathbb{R}^d$ at the $l$-th layer, according to the following formula:
+$$
+\begin{equation*}
+x^{(l+1)} = \exp\left(B(x^{(l)},u^{(l)})\right)x^{(l)},
+\end{equation*}
+$$
+where $B(x^{(l)}, u^{(l)})$ is the rotation generator. In practice, this reduces to
+$$
+\begin{equation*}
+x^{(l+1)} = x^{(l)}{} \cos \theta + u^{(l)}_{\perp}{} \frac{\sin \theta}{\theta},
+\end{equation*}
+$$
+with $\theta = \lVert u^{(l)}_{\perp} \rVert/\sqrt{d}$ and $u^{(l)}_{\perp}$ being the tangential component of $u^{(l)}$.
+
+### Orthogonal Transformer: Quick Usage
+
+- **Prerequisites**  
+  Prepare data in `data/` as in nanoGPT (e.g. `data/shakespeare_char/{train.bin,val.bin,meta.pkl}`). For the Shakespeare char dataset:
+
+```bash
+python data/shakespeare_char/prepare.py
+```
+
+- **Main training script**  
+  Training is driven by `train.py` and Python config files in `config/`.
+
+- **Orthogonal transformer config**  
+  Use `config/train_orthogonal_transformer.py`, which enables the new orthogonal update via:
+  - `orthogonal_transformer = True` in the config (passed into `GPTConfig`).
+
+- **Launch training with orthogonal updates**  
+
+```bash
+python train.py config/train_orthogonal_transformer.py
+```
+
+- **Other example config**  
+  - `config/train_shakespeare_char.py`: a small baseline character-level GPT config.
+
+- **Hyperparameter sweeps**  
+  The script `sweep_params.py` is a small launcher that:
+  - Defines a list of hyperparameter values to try (e.g. different `sigma_w` or other scalings).
+  - Spawns multiple `python train.py ...` runs (up to `MAX_PARALLEL` at once).
+  Use it when you want to automatically compare several configurations instead of starting each run manually.
+
+## Mini-paper
+
 ### Abstract
 We present the Orthogonal Transformer, a transformer model in which residual additions are replaced with orthogonal transformations. This allows for perfect norm preservation of activation vectors between layers at any training step and nearly constant layer-wise gradient norms at initialization. We view the output of each residual block (attention or MLP) and the block’s input activation as two components of a bivector that defines a rotation in the two-dimensional plane they span. This perspective naturally recovers and unifies recent modifications such as residual stream rescaling and orthogonal residual updates. We test our approach on a small language model (~10M parameters) with character-level tokenization and a small dataset (~1M tokens), on which it achieves results comparable to those of a standard transformer. Larger-scale experiments are forthcoming.
 
@@ -18,7 +69,7 @@ Let $x_s^{(l)} \in \mathbb{R}^d$ denote the token representation at residual lay
 $$
 \begin{equation}
 \begin{aligned}
-x^{(l+1)}_s &= x^{(l)}_s + u^{(l)}_s\left(\left\{\tilde x^{(l)}_{s'}\right\}_{s'=1}^S\right), && \text{for even } l,\\
+x^{(l+1)}_s &= x^{(l)}_s + u^{(l)}_s\left(\{\tilde x^{(l)}_{s'}\}_{s'=1}^S\right), && \text{for even } l,\\
 x^{(l+1)}_s &= x^{(l)}_s + u^{(l)}\left(\tilde x^{(l)}_s\right), && \text{for odd } l,
 \end{aligned}
 \end{equation}
@@ -110,9 +161,67 @@ Both for the baseline and for the Orthogonal Transformer, we train 16-layer tran
 
 The baseline transformer uses pre-layer RMS normalization, with no removal of the residual block’s radial component and no residual scaling. In the Orthogonal Transformer, we introduce a single RMSNorm layer with non-learnable weights after the token embeddings and remove all other RMSNorm layers, including the final one, since the residual stream remains normalized under the update rule.
 
-Fig. [] shows that both models achieve comparable validation loss on the held-out subset of the Tiny Shakespeare dataset, with the Orthogonal Transformer showing slightly lower validation loss. Fig. [] compares layer-wise gradient norms at initialization between the two approaches, showing that the Orthogonal Transformer has approximately constant layer-wise gradient norms.
+<table>
+  <tr>
+    <td align="center">
+      <img src="figures/train_loss_ortho.png" width="350"/>
+      <br/>
+    </td>
+    <td align="center">
+      <img src="figures/train_loss_baseline.png" width="350"/>
+      <br/>
+    </td>
+  </tr>
+  <tr>
+    <td align="center">
+      <img src="figures/val_loss_ortho.png" width="350"/>
+      <br/>
+    </td>
+    <td align="center">
+      <img src="figures/val_loss_baseline.png" width="350"/>
+      <br/>
+    </td>
+  </tr>
+</table>
 
-Despite the stability of gradients at initialization in the Orthogonal Transformer, we find that larger values of $\sigma_w$ at initialization may lead to exponentially vanishing gradients at later training steps (Fig. []). The underlying mechanism of this instability remains unclear, and we leave its study for future work. This finding emphasizes that perfect norm preservation of activations and perfect gradient propagation at initialization do not guarantee that this behavior will persist during training (see also [[Pennington et al., 2017]; [Bansal et al., 2018]; [Bachlechner et al., 2020]]), which calls for further studies aimed at a better understanding of training dynamics of deep neural networks. It would also be interesting to compare our approach directly to existing methods that use residual block radial component removal or residual scaling.
+<p align="center"><b>Figure 1. </b> Training and validation loss. <b>Left</b>: Orthogonal Transformer. <b>Right</b>: Baseline. For both models, we sweep over weight initializations.
+</p>
+
+<table>
+  <tr>
+    <td align="center">
+      <img src="figures/grad_ortho.png" width="350"/>
+      <br/>
+    </td>
+    <td align="center">
+      <img src="figures/grad_baseline.png" width="350"/>
+      <br/>
+    </td>
+  </tr>
+</table>
+
+<p align="center"><b>Figure 2. </b> Gradient norms at initialization, averaged across the batch dimension and token positions. <b>Left</b>: Orthogonal Transformer. <b>Right</b>: Baseline.
+</p>
+
+Figure 1 shows that both models achieve comparable validation loss on the held-out subset of the Tiny Shakespeare dataset. Figure 2 compares layer-wise gradient norms at initialization between the two approaches, showing that the Orthogonal Transformer has approximately constant layer-wise gradient norms.
+
+<table>
+  <tr>
+    <td align="center">
+      <img src="figures/grad_ortho_step_400.png" width="350"/>
+      <br/>
+    </td>
+    <td align="center">
+      <img src="figures/grad_baseline_step_400.png" width="350"/>
+      <br/>
+    </td>
+  </tr>
+</table>
+
+<p align="center"><b>Figure 2. </b> Gradient norms at training step 400, averaged across the batch dimension and token positions. <b>Left</b>: Orthogonal Transformer. <b>Right</b>: Baseline.
+</p>
+
+Despite the stability of gradients at initialization in the Orthogonal Transformer, we find that larger values of $\sigma_w$ at initialization may lead to exponentially vanishing gradients at later training steps (Figure 3). The underlying mechanism of this instability remains unclear, and we leave its study for future work. This finding emphasizes that perfect norm preservation of activations and perfect gradient propagation at initialization do not guarantee that this behavior will persist during training (see also [[Pennington et al., 2017]; [Bansal et al., 2018]; [Bachlechner et al., 2020]]), which calls for further studies aimed at a better understanding of training dynamics of deep neural networks. Moreover, we observe that at later training steps the layer-wise gradient norm variance in the Orthogonal Transformer becomes comparable to that in the baseline transformer. It would also be interesting to compare our approach directly to existing methods that use residual block radial component removal or residual scaling.
 
 ### Conclusion
 
