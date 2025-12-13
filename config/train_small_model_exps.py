@@ -34,7 +34,7 @@ ln_learnable = True
 peri_ln = False
 peri_ln_learnable = False
 orthogonal_residual = False
-orthogonal_transformer = True
+orthogonal_transformer = False
 eps_tan = 1e-4
 
 # initialization parameters
