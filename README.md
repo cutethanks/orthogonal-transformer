@@ -18,7 +18,7 @@ Let $x_s^{(l)} \in \mathbb{R}^d$ denote the token representation at residual lay
 $$
 \begin{equation}
 \begin{aligned}
-x^{(l+1)}_s &= x^{(l)}_s + u^{(l)}_s\left(\{\tilde x^{(l)}_{s'}\}_{s'=1}^S\right), && \text{for even } l,\\
+x^{(l+1)}_s &= x^{(l)}_s + u^{(l)}_s\left(\left\{\tilde x^{(l)}_{s'}\right\}_{s'=1}^S\right), && \text{for even } l,\\
 x^{(l+1)}_s &= x^{(l)}_s + u^{(l)}\left(\tilde x^{(l)}_s\right), && \text{for odd } l,
 \end{aligned}
 \end{equation}
