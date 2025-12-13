@@ -93,7 +93,7 @@ Note that Eq. (7) can be written in terms of the non-normalized generator $u^{(l
 
 $$
 \begin{equation}
-x^{(l+1)} = x^{(l)}\, \cos \theta + u^{(l)}_\perp\, \frac{\sin \theta}{\theta}.
+x^{(l+1)} = x^{(l)}{\,} \cos \theta + u^{(l)}_\perp{\,} \frac{\sin \theta}{\theta}.
 \end{equation}
 $$
 
