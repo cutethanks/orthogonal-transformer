@@ -102,7 +102,7 @@ In the limit of small $\theta$, this update rule reproduces the residual additio
 #### Implementation
 
 In practice, we choose to keep $\lVert x^{(l)} \rVert = \sqrt{d}$, so we redefine $b = \frac{x}{\sqrt{d}} \wedge \frac{\hat u_\perp}{\sqrt{d}}$.
-Thus, $B = \theta \hat{B}$, where $\theta = \lVert u_\perp \rVert / \sqrt{d}$ and $\hat B = x \hat u_{\perp}^T - \hat u_{\perp} x^T$ is constructed from the pair of orthogonal unit vectors $(\hat{x}, \hat{u}_\perp)$ as above, with $\hat{x} = x / \sqrt{d}$. Equations (5) and (8) retain their form with the redefined $\theta$. To avoid division by zero in Eq. (8), we introduce a threshold $\epsilon$ such that, when $\theta < \epsilon$, we replace the update rule with the residual addition formula $x^{(l+1)} = x^{(l)} + u_\perp^{(l)}$. 
+Thus, $B = \theta \hat{B}$, where $\theta = \lVert u_\perp \rVert / \sqrt{d}$ and $\hat B = x \hat u_{\perp}^T - \hat u_{\perp} x^T$ is constructed from the pair of orthogonal unit vectors $(\hat{x}, \hat u_\perp)$ as above, with $\hat{x} = x / \sqrt{d}$. Equations (5) and (8) retain their form with the redefined $\theta$. To avoid division by zero in Eq. (8), we introduce a threshold $\epsilon$ such that, when $\theta < \epsilon$, we replace the update rule with the residual addition formula $x^{(l+1)} = x^{(l)} + u_\perp^{(l)}$. 
 
 ### Experiments
 
